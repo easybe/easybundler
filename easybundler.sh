@@ -1,10 +1,11 @@
 #!/bin/sh
+
 # EasyBundler v0.1
-# 2011 EasyB
+# 2011 easyb
 
 function usage()
 {
-  echo usage: `basename $0` -n name -v version -e binary [-e binary2] [-l lib1.dylib] [-l lib2.dylib] [-i Icon.icns] [-d dest]
+  echo usage: `basename $0` -n name -v version -e binary [-e binary2] [-l lib1.dylib] [-l lib2.dylib] [-i Icon.icns] [-p Info.plist] [-d dest]
   exit
 }
 
@@ -22,7 +23,7 @@ function change()
     STR=`echo $STR | sed 's/.*://g'`
     STR=`echo $STR | sed 's/ ([a-z0-9,. ]*)//g'`
     
-    STRS=($STR)
+    STRS=( $STR )
     
     if [ `echo $FILE | grep '.dylib'` ]
     then
@@ -56,7 +57,7 @@ function change()
 
 DEST="."
 
-while getopts  "n:v:e:d:l:i:h" flag
+while getopts  "n:v:e:d:l:i:p:h" flag
 do
   case $flag in
     h) usage [destination-path];;
@@ -66,6 +67,7 @@ do
     d) DEST=$OPTARG;;
     l) _LIBS="$_LIBS $OPTARG"; _LIBNAMES="$_LIBNAMES `basename "$OPTARG"`";;
     i) ICONPATH=$OPTARG; ICON=`basename $OPTARG`;;
+    p) INFO=$OPTARG;;
   esac
 done
 
@@ -78,38 +80,45 @@ MAINBIN=`basename ${BINS[0]}`
 ROOT=${DEST}/${NAME}.app/Contents
 mkdir -p $ROOT
 
-echo "creating Info.plist"
-cat <<EOF > ${ROOT}/Info.plist
+if [ "x" != "x${INFO}" ]
+then
+  echo "copying ${INFO}"
+  cp ${INFO} ${ROOT}/Info.plist
+else
+
+  echo "creating Info.plist"
+  cat <<EOF > ${ROOT}/Info.plist
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>English</string>
-	<key>CFBundleExecutable</key>
-	<string>${MAINBIN}</string>
-	<key>CFBundleIconFile</key>
-	<string>${ICON}</string>
-	<key>CFBundleGetInfoString</key>
-	<string>${NAME} version ${VERSION}</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleLongVersionString</key>
-	<string>${VERSION}</string>
-	<key>CFBundleName</key>
-	<string>${NAME}</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>${VERSION}</string>
-	<key>CFBundleSignature</key>
-	<string>????</string>
-	<key>CFBundleVersion</key>
-	<string>${VERSION}</string>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>English</string>
+  <key>CFBundleExecutable</key>
+  <string>${MAINBIN}</string>
+  <key>CFBundleIconFile</key>
+  <string>${ICON}</string>
+  <key>CFBundleGetInfoString</key>
+  <string>${NAME} version ${VERSION}</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleLongVersionString</key>
+  <string>${VERSION}</string>
+  <key>CFBundleName</key>
+  <string>${NAME}</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>${VERSION}</string>
+  <key>CFBundleSignature</key>
+  <string>????</string>
+  <key>CFBundleVersion</key>
+  <string>${VERSION}</string>
 </dict>
 </plist>
 
 EOF
+fi
 
 echo "creating PkgInfo"
 echo -n 'APPL????' > ${ROOT}/PkgInfo
@@ -142,10 +151,13 @@ then
   done
 fi
 
-RSC=${ROOT}/Resources
-mkdir -p $RSC
-
-echo "copying icon $ICONPATH"
-cp $ICONPATH $RSC 
+if [ "x" != "x${ICON}" ]
+then
+  RSC=${ROOT}/Resources
+  mkdir -p $RSC
+  
+  echo "copying icon $ICONPATH"
+  cp $ICONPATH $RSC
+fi
 
 
