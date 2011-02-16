@@ -5,7 +5,13 @@
 
 function usage()
 {
-  echo usage: `basename $0` -n name -v version -e binary [-e binary2] [-l lib1.dylib] [-l lib2.dylib] [-i Icon.icns] [-p Info.plist] [-d dest]
+  echo "usage: `basename $0` -n name -v version -e binary [-d dest]"
+  echo "                  [-e binary2] [-i Icon.icns] [-p Info.plist]"
+  echo "                  [-l lib1.dylib] [-l lib2.dylib] ..." 
+  echo "                  [-r res1] [-r res2] ..."
+
+
+#usage: `basename $0` -n name -v version -e binary [-e binary2] [-l lib1.dylib] [-l lib2.dylib] [-i Icon.icns] [-p Info.plist] [-d dest]
   exit
 }
 
@@ -50,14 +56,14 @@ function change()
   return
 }
 
-#if [ $# -lt 1 ]
-#then
-#usage
-#fi
+if [ $# -lt 1 ]
+  then
+  usage
+fi
 
 DEST="."
 
-while getopts  "n:v:e:d:l:i:p:h" flag
+while getopts  "n:v:e:d:l:i:p:r:h" flag
 do
   case $flag in
     h) usage [destination-path];;
@@ -68,19 +74,21 @@ do
     l) _LIBS="$_LIBS $OPTARG"; _LIBNAMES="$_LIBNAMES `basename "$OPTARG"`";;
     i) ICONPATH=$OPTARG; ICON=`basename $OPTARG`;;
     p) INFO=$OPTARG;;
+    r) _DATA="$_DATA $OPTARG";;
   esac
 done
 
 BINS=( $_BINS )
 LIBS=( $_LIBS )
 LIBNAMES=( $_LIBNAMES )
+DATA=( $_DATA )
 
 MAINBIN=`basename ${BINS[0]}`
 
 ROOT=${DEST}/${NAME}.app/Contents
 mkdir -p $ROOT
 
-if [ "x" != "x${INFO}" ]
+if [ "x${INFO}" != "x" ]
 then
   echo "copying ${INFO}"
   cp ${INFO} ${ROOT}/Info.plist
@@ -123,7 +131,7 @@ fi
 echo "creating PkgInfo"
 echo -n 'APPL????' > ${ROOT}/PkgInfo
 
-if [ "x" != "x${BINS[0]}" ]
+if [ "x${BINS[0]}" != "x" ]
 then
   MACOS=${ROOT}/MacOS
   mkdir -p $MACOS
@@ -137,7 +145,7 @@ then
   done
 fi
 
-if [ "x" != "x${LIBS[0]}" ]
+if [ "x${LIBS[0]}" != "x" ]
 then
   FW=${ROOT}/Frameworks
   mkdir -p $FW
@@ -151,13 +159,20 @@ then
   done
 fi
 
-if [ "x" != "x${ICON}" ]
+RES=${ROOT}/Resources
+mkdir -p $RES
+
+if [ "x${ICON}" != "x" ]
 then
-  RSC=${ROOT}/Resources
-  mkdir -p $RSC
-  
   echo "copying icon $ICONPATH"
-  cp $ICONPATH $RSC
+  cp $ICONPATH $RES
 fi
 
-
+if [ "x${DATA}" != "x" ]
+then
+  for FILE in ${DATA[@]}
+  do
+    echo "copying "$FILE""
+    cp $FILE ${RES}/
+  done
+fi
